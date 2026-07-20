@@ -13,7 +13,7 @@ ENV PLAYWRIGHT_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH}
 # Set the working directory
 WORKDIR /app
 
-RUN --mount=type=cache,target=/root/.npm,sharing=locked,id=npm-cache \
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
     --mount=type=bind,source=package.json,target=package.json \
     --mount=type=bind,source=package-lock.json,target=package-lock.json \
   npm ci --omit=dev && \
@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked,id=npm-cache \
 # ------------------------------
 FROM base AS builder
 
-RUN --mount=type=cache,target=/root/.npm,sharing=locked,id=npm-cache \
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
     --mount=type=bind,source=package.json,target=package.json \
     --mount=type=bind,source=package-lock.json,target=package-lock.json \
   npm ci
