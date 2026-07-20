@@ -1,59 +1,16 @@
-ARG PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+FROM mcr.microsoft.com/playwright:v1.49.1-noble
 
-# ------------------------------
-# Base
-# ------------------------------
-# Base stage: Contains only the minimal dependencies required for runtime
-# (node_modules and Playwright system dependencies)
-FROM node:22-bookworm-slim AS base
-
-ARG PLAYWRIGHT_BROWSERS_PATH
-ENV PLAYWRIGHT_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH}
-
-# Set the working directory
 WORKDIR /app
+
+COPY package.json package-lock.json ./
 
 RUN npm ci
 
-# ------------------------------
-# Builder
-# ------------------------------
-FROM base AS builder
+COPY . .
 
-RUN npm ci --only=production
+RUN npm run build
 
-# Copy the rest of the app
-COPY *.json *.js *.ts .
+ENV PORT=3000
+EXPOSE 3000
 
-# ------------------------------
-# Browser
-# ------------------------------
-# Cache optimization:
-# - Browser is downloaded only when node_modules or Playwright system dependencies change
-# - Cache is reused when only source code changes
-FROM base AS browser
-
-RUN npx -y playwright-core install --no-shell chromium
-
-# ------------------------------
-# Runtime
-# ------------------------------
-FROM base
-
-ARG PLAYWRIGHT_BROWSERS_PATH
-ARG USERNAME=node
-ENV NODE_ENV=production
-
-# Set the correct ownership for the runtime user on production `node_modules`
-RUN chown -R ${USERNAME}:${USERNAME} node_modules
-
-USER ${USERNAME}
-
-COPY --from=browser --chown=${USERNAME}:${USERNAME} ${PLAYWRIGHT_BROWSERS_PATH} ${PLAYWRIGHT_BROWSERS_PATH}
-COPY --chown=${USERNAME}:${USERNAME} cli.js package.json ./
-
-# Current working directory must be writable as MCP may need to create default output dir in it.
-WORKDIR /home/${USERNAME}
-
-# Run in headless and only with chromium (other browsers need more dependencies not included in this image)
-ENTRYPOINT ["node", "/app/cli.js", "--headless", "--browser", "chromium", "--no-sandbox"]
+CMD ["node", "cli.js", "--headless", "--browser", "chromium", "--no-sandbox", "--transport", "http", "--host", "0.0.0.0", "--port", "3000"]
