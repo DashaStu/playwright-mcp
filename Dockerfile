@@ -13,4 +13,4 @@ RUN npm run build
 ENV PORT=3000
 EXPOSE 3000
 
-CMD ["node", "cli.js", "--headless", "--browser", "chromium", "--no-sandbox", "--transport", "http", "--host", "0.0.0.0", "--port", "3000"]
+CMD ["npx", "-y", "@playwright/mcp@latest", "--port", "3000", "--host", "0.0.0.0", "--headless"]
